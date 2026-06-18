@@ -1,0 +1,11 @@
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+imbalanced-learn==0.12.3
+xgboost
+matplotlib==3.9.2
+seaborn==0.13.2
+joblib==1.4.2
+nbconvert==7.16.4
+ipykernel==6.28.0
+papermill
