@@ -49,6 +49,8 @@ Sets `CAPSTONE_SAMPLE` env var; notebooks read it to down-sample for fast iterat
 4. Re-run step 1
 5. Repeat until exit 0
 6. Final: run_nb.py (no --sample) for clean full-data run
+7. Before commit: re-grade against wk1_capstone_rubric.md self-eval worksheet;
+   update ratings + "fix before submission" notes if anything changed.
 ```
 
 ## Capstone brief constraints (MUST respect in any fix or rebuild)
