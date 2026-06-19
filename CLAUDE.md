@@ -2,11 +2,13 @@
 
 ## Environment
 
-**Interpreter**: `/opt/homebrew/anaconda3/bin/python` (conda `base`, Python 3.12.7)
-⚠️ `python3` on PATH resolves to an empty Homebrew install — always use the anaconda one.
+**Interpreter**: `.venv/bin/python` (uv-managed, Python 3.12.8)
 
 ```bash
-/opt/homebrew/anaconda3/bin/pip install -r requirements.txt
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+# Re-register Jupyter kernel after venv recreate:
+.venv/bin/python -m ipykernel install --user --name python3 --display-name "Python 3"
 ```
 
 ## Data
@@ -28,10 +30,10 @@ Location: `Week 1/Wk1_Capstone/data/`
 
 ```bash
 # Fast iteration (30k stratified sample — use during fix/dev loops)
-/opt/homebrew/anaconda3/bin/python run_nb.py "Week 1/Wk1_Capstone/eda_randomforest.ipynb" --sample 30000
+.venv/bin/python run_nb.py "Week 1/Wk1_Capstone/capstone_churn.ipynb" --sample 30000
 
 # Full data run (final only — takes longer with 594k rows)
-/opt/homebrew/anaconda3/bin/python run_nb.py "Week 1/Wk1_Capstone/eda_randomforest.ipynb"
+.venv/bin/python run_nb.py "Week 1/Wk1_Capstone/capstone_churn.ipynb"
 ```
 
 `run_nb.py` prints ONLY the failing cell index + source + traceback tail (token-cheap).
@@ -57,7 +59,7 @@ Sets `CAPSTONE_SAMPLE` env var; notebooks read it to down-sample for fast iterat
 - **Hold-out test set evaluated ONCE** — all model selection/tuning via CV on train only
 - All transforms + estimator must be in a formal **`sklearn.pipeline.Pipeline`** (prevents leakage)
 - Primary deliverable: **`groupX.pdf`** ≤ 12 slides; Slide 1 must include code repo link
-- Deadline: **2026-06-19 15:00**
+- Deadline: **2026-06-22 15:00**
 - `RANDOM_STATE = 42` throughout
 - Required structure mirrors `Wine_Quality_Assignment.ipynb` §1–5 = Parts A–E:
   - Part A: Pipeline Engineering
