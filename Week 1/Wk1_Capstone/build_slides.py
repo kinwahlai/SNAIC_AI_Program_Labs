@@ -9,7 +9,7 @@ Edit DATA dict to update numbers after each full-data run.
 Change CONTRIB_SEED to re-roll the contribution matrix.
 """
 
-import base64, json, pathlib, random, sys
+import base64, json, pathlib, sys
 from collections import Counter
 
 from pptx import Presentation
@@ -24,9 +24,6 @@ NB_PATH    = HERE / "capstone_churn_executed.ipynb"
 OUT_PATH   = HERE / "group3.pptx"
 ASSETS_DIR.mkdir(exist_ok=True)
 
-# ── Contribution seed ─────────────────────────────────────────────────────────
-CONTRIB_SEED = 42  # change to re-roll
-
 # ── DATA — update values after full-data run ──────────────────────────────────
 DATA = {
     "group":        "Group 3",
@@ -34,9 +31,9 @@ DATA = {
     "repo_link":    "<repo link>",
     "youtube_link": "<YouTube link>",
     "members": [
-        {"name": "YEO XIU JUAN"},
-        {"name": "LIM KHOON SENG"},
-        {"name": "LAI KIN WAH"},
+        {"name": "YEO XIU JUAN",   "id": "2570777"},
+        {"name": "LIM KHOON SENG", "id": "2570888"},
+        {"name": "LAI KIN WAH",    "id": "2570999"},
     ],
 
     # ── CV results (5-fold, defaults, full 594k data) ─────────────────────────
@@ -73,36 +70,17 @@ DATA = {
     ),
 }
 
-# ── Contribution matrix ───────────────────────────────────────────────────────
-WORK_AREAS = [
-    "Part A: Pipeline Engineering",
-    "Part A: EDA & Data Quality",
-    "Part B: Model Selection",
-    "Part C: Hyperparameter Tuning",
-    "Part E: Business Decision",
-    "Report & Slides",
+MEMBERS = [m["name"] for m in DATA["members"]]
+
+# ── Fixed contribution matrix ─────────────────────────────────────────────────
+CONTRIBUTIONS = [
+    {"area": "Part A: Pipeline Engineering",  "primary": "LIM KHOON SENG", "secondary": "YEO XIU JUAN"},
+    {"area": "Part A: EDA & Data Quality",    "primary": "YEO XIU JUAN",   "secondary": "LAI KIN WAH"},
+    {"area": "Part B: Model Selection",       "primary": "YEO XIU JUAN",   "secondary": "LIM KHOON SENG"},
+    {"area": "Part C: Hyperparameter Tuning", "primary": "LIM KHOON SENG", "secondary": "YEO XIU JUAN"},
+    {"area": "Part E: Business Decision",     "primary": "YEO XIU JUAN",   "secondary": "LAI KIN WAH"},
+    {"area": "Report & Slides",               "primary": "LAI KIN WAH",    "secondary": "LIM KHOON SENG"},
 ]
-MEMBERS = [m["name"] for m in DATA["members"]]   # 3 members
-
-def make_contributions(seed):
-    rng = random.Random(seed)
-    members = MEMBERS[:]
-    rng.shuffle(members)                          # random rotation
-    result = []
-    n = len(members)
-    for i, area in enumerate(WORK_AREAS):
-        primary   = members[i % n]
-        secondary = members[(i + 1) % n]         # next member, guaranteed ≠ primary
-        result.append({"area": area, "primary": primary, "secondary": secondary})
-    return result
-
-CONTRIBUTIONS = make_contributions(CONTRIB_SEED)
-
-# Sanity: each member = exactly 2 primary + 2 secondary
-_p = Counter(c["primary"]   for c in CONTRIBUTIONS)
-_s = Counter(c["secondary"] for c in CONTRIBUTIONS)
-assert all(v == 2 for v in _p.values()), f"Primary imbalance: {_p}"
-assert all(v == 2 for v in _s.values()), f"Secondary imbalance: {_s}"
 
 # ── Theme ─────────────────────────────────────────────────────────────────────
 W      = Inches(13.333)   # 16:9 widescreen width
@@ -245,7 +223,7 @@ def s1_title(prs):
 
     y = Inches(2.85)
     for m in DATA["members"]:
-        txbox(sl, f"  {m['name']}",
+        txbox(sl, f"  {m['name']} (ID: {m['id']})",
               MARGIN, y, Inches(6), Inches(0.38), size=15, color=C_TEXT)
         y += Inches(0.4)
 
@@ -263,7 +241,7 @@ def s2_exec_summary(prs):
         f"Dataset: 594,194 Telco customers  |  Churn rate ~22.5%  |  Class imbalance handled with SMOTE",
         f"3 model families compared via 5-fold stratified CV (ROC-AUC primary, Recall secondary)",
         f"Champion: {d['champion']} ({d['champion_family']}) — highest CV ROC-AUC",
-        f"GridSearchCV tuning on champion only: best params → {d['champion_params']}",
+        f"Champion tuned via GridSearchCV (champion-only, ≤50-config budget); CV ROC-AUC {d['champion_cv_auc']}",
         f"Hold-out (evaluated once):  ROC-AUC {d['hold_auc']}  ·  Recall {d['hold_recall']}  at threshold {d['threshold']}",
         f"Threshold {d['threshold']} = highest cut still holding ≥80% recall; FN far costlier than FP, and SMOTE lifts probabilities above 0.50",
         d["biz_reco"],
@@ -298,33 +276,64 @@ def s4_pipeline(prs):
     y0 = title_bar(sl, "Leakage-Safe Pipeline Architecture  (Part A)",
                    "CRISP-DM: Data Preparation  |  All transforms encapsulated inside sklearn Pipeline")
 
-    pipe_txt = (
-        "ImbPipeline\n"
-        "  ├── preprocessor  (ColumnTransformer)\n"
-        "  │     ├── num_pipe  :  StandardScaler\n"
-        "  │     └── cat_pipe  :  OneHotEncoder  →  SelectPercentile(chi², 50%)\n"
-        "  ├── smote          :  SMOTE(random_state=42)   ← training fold only\n"
-        "  └── classifier     :  <champion>"
-    )
-    # Monospace block with tinted background
-    rect(sl, MARGIN, y0, W - MARGIN*2, Inches(2.15), C_LIGHT)
-    tb = sl.shapes.add_textbox(MARGIN + Inches(0.15), y0 + Inches(0.1),
-                               W - MARGIN*2 - Inches(0.3), Inches(2.0))
-    tf = tb.text_frame; tf.word_wrap = False
-    for i, line in enumerate(pipe_txt.split("\n")):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.space_before = Pt(2)
-        r = p.add_run(); r.text = line
-        r.font.name = "Courier New"; r.font.size = Pt(13); r.font.color.rgb = C_TEXT
+    # ── Visual box-flow: 3 stage boxes + arrows ──────────────────────────────
+    box_t  = y0
+    box_h  = Inches(2.2)
+    arr_w  = Inches(0.45)
+    total  = W - MARGIN * 2
+    # box widths: narrow | narrow | wide
+    bw1 = Inches(2.8); bw2 = Inches(2.2); bw3 = total - bw1 - bw2 - arr_w * 2
+    x1 = MARGIN; x2 = x1 + bw1 + arr_w; x3 = x2 + bw2 + arr_w
 
-    # Key design decisions (below)
-    y_note = y0 + Inches(2.35)
+    # Stage 1 — BEFORE SPLIT
+    rect(sl, x1, box_t, bw1, Inches(0.38), C_ACCENT)
+    txbox(sl, "BEFORE SPLIT", x1 + Inches(0.08), box_t + Inches(0.06),
+          bw1 - Inches(0.1), Inches(0.3), size=11, bold=True, color=C_WHITE)
+    rect(sl, x1, box_t + Inches(0.38), bw1, box_h - Inches(0.38), C_LIGHT)
+    bullets(sl, ["Coerce TotalCharges to numeric", "Map target: Yes → 1, No → 0",
+                 "Drop ID column"],
+            x1 + Inches(0.08), box_t + Inches(0.48), bw1 - Inches(0.12),
+            box_h - Inches(0.55), size=11, marker="•")
+
+    # Arrow 1
+    txbox(sl, "→", x1 + bw1, box_t + box_h * 0.4, arr_w, Inches(0.4),
+          size=20, bold=True, color=C_ACCENT, align=PP_ALIGN.CENTER)
+
+    # Stage 2 — SPLIT
+    rect(sl, x2, box_t, bw2, Inches(0.38), C_ACCENT)
+    txbox(sl, "80 / 20 SPLIT", x2 + Inches(0.08), box_t + Inches(0.06),
+          bw2 - Inches(0.1), Inches(0.3), size=11, bold=True, color=C_WHITE)
+    rect(sl, x2, box_t + Inches(0.38), bw2, box_h - Inches(0.38), C_LIGHT)
+    bullets(sl, ["Stratified by Churn", "Seed = 42",
+                 "Test set locked until §4"],
+            x2 + Inches(0.08), box_t + Inches(0.48), bw2 - Inches(0.12),
+            box_h - Inches(0.55), size=11, marker="•")
+
+    # Arrow 2
+    txbox(sl, "→", x2 + bw2, box_t + box_h * 0.4, arr_w, Inches(0.4),
+          size=20, bold=True, color=C_ACCENT, align=PP_ALIGN.CENTER)
+
+    # Stage 3 — INSIDE PIPELINE (per CV fold)
+    rect(sl, x3, box_t, bw3, Inches(0.38), C_TITLE)
+    txbox(sl, "INSIDE PIPELINE  (per CV fold)", x3 + Inches(0.08), box_t + Inches(0.06),
+          bw3 - Inches(0.1), Inches(0.3), size=11, bold=True, color=C_WHITE)
+    rect(sl, x3, box_t + Inches(0.38), bw3, box_h - Inches(0.38), C_LIGHT)
+    pipe_items = [
+        "Numeric  →  StandardScaler",
+        "Categorical  →  OneHotEncoder  →  χ² top-50%",
+        "↓  SMOTE  (training fold only)",
+        "↓  XGBoost champion",
+    ]
+    bullets(sl, pipe_items, x3 + Inches(0.08), box_t + Inches(0.48),
+            bw3 - Inches(0.12), box_h - Inches(0.55), size=12, marker="")
+
+    # Design Decisions (below the flow)
+    y_note = box_t + box_h + Inches(0.25)
     points = [
-        "SMOTE inside pipeline — oversampling applied only to training folds, never to validation data.",
-        "SelectPercentile(chi², 50%) — retains top-50% of one-hot columns by χ² association with Churn.",
-        "OneHotEncoder(handle_unknown='ignore') — unseen categories in test set silently zeroed.",
-        "StandardScaler on numeric features — required for Logistic Regression convergence.",
-        "All transforms fit on training fold only; test fold transformed but never fitted.",
+        "SMOTE runs inside the pipeline — oversampling touches training folds only, never validation/test.",
+        "χ² feature selection keeps the top-50% of encoded categories most associated with churn.",
+        "Numeric features scaled so Logistic Regression converges; trees are scale-invariant.",
+        "Every transform is fit on the training fold only — the test set is untouched until §4.",
     ]
     txbox(sl, "Design Decisions", MARGIN, y_note, W - MARGIN*2, Inches(0.35),
           size=13, bold=True, color=C_ACCENT)
@@ -415,7 +424,7 @@ def s7_tuning(prs):
     d  = DATA
     sl = blank(prs); set_bg(sl)
     y0 = title_bar(sl, "Hyperparameter Tuning  (Part C)",
-                   "GridSearchCV on champion only  |  ≤50 candidate-config cap  |  n_jobs=2 (SMOTE memory)")
+                   "GridSearchCV on champion only  |  ≤50 candidate-config cap")
 
     # Strategy table (left column)
     left_w = Inches(7.5)
@@ -427,7 +436,6 @@ def s7_tuning(prs):
         ("CV folds",        "5-fold stratified",     "Validation repeats, not search iterations"),
         ("Tune dataset",    "100k subsample",        "4–5× faster; refit on full 475k rows"),
         ("refit metric",    "roc_auc",               "Threshold-independent; recall tuned in §4"),
-        ("n_jobs",          "2",                     "SMOTE in pipeline — -1 causes memory blow-up"),
     ]
     col_w = [Inches(2.0), Inches(2.2), Inches(3.3)]
     table(sl, headers, rows, MARGIN, y0, left_w, col_widths=col_w)
@@ -443,17 +451,15 @@ def s7_tuning(prs):
         f"CV ROC-AUC:  {d['champion_cv_auc']}",
         f"CV Recall:    {d['champion_cv_recall']}",
         "",
-        "Refit: clone(best_estimator_)",
-        "       .fit(X_train, y_train)",
-        "       → full 475k rows",
+        "Refit best config on full 475k-row train set",
     ]
     tb = sl.shapes.add_textbox(log_x, y0 + Inches(0.4), log_w, Inches(3.0))
-    tf = tb.text_frame; tf.word_wrap = False
+    tf = tb.text_frame; tf.word_wrap = True
     for i, line in enumerate(log_lines):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.space_before = Pt(3)
         r = p.add_run(); r.text = line
-        r.font.name = "Courier New"; r.font.size = Pt(12); r.font.color.rgb = C_TEXT
+        r.font.name = FONT; r.font.size = Pt(12); r.font.color.rgb = C_TEXT
 
 
 def s8_stability(prs, imgs):
@@ -535,25 +541,22 @@ def s9_business(prs, imgs):
 
 def s10_contributions(prs):
     sl = blank(prs); set_bg(sl)
-    y0 = title_bar(sl, "Individual Contributions",
-                   f"Balanced primary/secondary split  |  seed={CONTRIB_SEED} (change CONTRIB_SEED to re-roll)")
+    y0 = title_bar(sl, "Individual Contributions")
 
+    # Name / ID reference table
+    id_headers = ["Name", "Student ID"]
+    id_rows    = [(m["name"], m["id"]) for m in DATA["members"]]
+    table(sl, id_headers, id_rows, MARGIN, y0, Inches(4.5),
+          col_widths=[Inches(3.0), Inches(1.5)])
+
+    # Contributions table (names only, no repeated IDs)
+    y_contrib = y0 + Inches(1.6)
     headers = ["Work Area", "Primary Owner", "Secondary Support"]
     rows    = [(c["area"], c["primary"], c["secondary"]) for c in CONTRIBUTIONS]
     col_w   = [Inches(4.5), Inches(3.5), Inches(3.5)]
     tbl_w   = sum(col_w)
-    table(sl, headers, rows, MARGIN, y0, tbl_w, col_widths=col_w)
+    table(sl, headers, rows, MARGIN, y_contrib, tbl_w, col_widths=col_w)
 
-    # Balance summary
-    p_cnt = Counter(c["primary"]   for c in CONTRIBUTIONS)
-    s_cnt = Counter(c["secondary"] for c in CONTRIBUTIONS)
-    y_sum = y0 + Inches(2.8)
-    txbox(sl, "Balance check:", MARGIN, y_sum, W - MARGIN*2, Inches(0.35),
-          size=11, bold=True, color=C_GRAY)
-    for i, name in enumerate(MEMBERS):
-        line = f"{name}:  {p_cnt[name]} areas as Primary  +  {s_cnt[name]} areas as Secondary"
-        txbox(sl, line, MARGIN, y_sum + Inches(0.35 + i*0.3), W - MARGIN*2, Inches(0.3),
-              size=11, color=C_TEXT)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -586,7 +589,7 @@ def main():
 
     prs.save(OUT_PATH)
     print(f"\nSaved: {OUT_PATH}  ({len(prs.slides)} slides)")
-    print("\nContribution matrix (CONTRIB_SEED={0}):".format(CONTRIB_SEED))
+    print("\nContribution matrix:")
     for c in CONTRIBUTIONS:
         print(f"  {c['area']:<35}  Primary: {c['primary']:<15}  Secondary: {c['secondary']}")
 
