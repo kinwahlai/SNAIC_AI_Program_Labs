@@ -34,9 +34,9 @@ DATA = {
     "repo_link":    "<repo link>",
     "youtube_link": "<YouTube link>",
     "members": [
-        {"name": "Joyce Yeo",  "role": "Data Scientist"},
-        {"name": "KhoonSeng", "role": "ML Engineer"},
-        {"name": "Darren Lai","role": "Data Analyst"},
+        {"name": "Joyce Yeo",  "role": "SNAIC Learner"},
+        {"name": "KhoonSeng", "role": "SNAIC Learner"},
+        {"name": "Lai Kin Wah","role": "SNAIC Learner"},
     ],
 
     # ── CV results (5-fold, defaults, full 594k data) ─────────────────────────
@@ -265,7 +265,7 @@ def s2_exec_summary(prs):
         f"Champion: {d['champion']} ({d['champion_family']}) — highest CV ROC-AUC",
         f"GridSearchCV tuning on champion only: best params → {d['champion_params']}",
         f"Hold-out (evaluated once):  ROC-AUC {d['hold_auc']}  ·  Recall {d['hold_recall']}  at threshold {d['threshold']}",
-        f"Threshold {d['threshold']} selected to achieve ≥80% recall (FN cost ~$500+ >> FP cost ~$30)",
+        f"Threshold {d['threshold']} = highest cut still holding ≥80% recall; FN far costlier than FP, and SMOTE lifts probabilities above 0.50",
         d["biz_reco"],
     ]
     bullets(sl, b, MARGIN, y0, W - MARGIN*2, H - y0 - MARGIN, size=15)
@@ -501,9 +501,9 @@ def s9_business(prs, imgs):
     cost_h = ["Error Type", "Consequence", "Severity"]
     cost_r = [
         ("False Negative — miss a churner",
-         "Customer leaves uncontacted → lost LTV (~$500+)", "CRITICAL"),
+         "Customer leaves uncontacted → lost lifetime value", "CRITICAL"),
         ("False Positive — flag loyal customer",
-         "Wasted retention offer (~$30 voucher)", "Moderate"),
+         "Wasted retention offer — comparatively cheap, recoverable", "Moderate"),
     ]
     table(sl, cost_h, cost_r, MARGIN, y0 + Inches(0.38), left_w,
           col_widths=[Inches(2.5), Inches(2.8), Inches(0.9)])
@@ -511,8 +511,9 @@ def s9_business(prs, imgs):
     # Decision points
     y_dec = y0 + Inches(1.75)
     dec = [
-        f"FN cost >> FP cost → lower classification threshold below default 0.50.",
-        f"Selected threshold {d['threshold']}: achieves ≥80% recall on validation folds.",
+        "FN far costlier than FP → prioritise recall; require recall ≥ 80%.",
+        f"Among thresholds meeting the floor, {d['threshold']} is the highest — limits false positives.",
+        "SMOTE inflates predicted probabilities, so the operating point sits above 0.50, not below.",
         f"At threshold {d['threshold']}: Recall {d['hold_recall']} on hold-out — "
         f"{float(d['hold_recall'])*100:.0f}% of real churners flagged for intervention.",
         d["biz_reco"],
