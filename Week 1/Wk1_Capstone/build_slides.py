@@ -34,9 +34,9 @@ DATA = {
     "repo_link":    "<repo link>",
     "youtube_link": "<YouTube link>",
     "members": [
-        {"name": "Joyce Yeo",  "role": "SNAIC Learner"},
-        {"name": "KhoonSeng", "role": "SNAIC Learner"},
-        {"name": "Lai Kin Wah","role": "SNAIC Learner"},
+        {"name": "YEO XIU JUAN"},
+        {"name": "LIM KHOON SENG"},
+        {"name": "LAI KIN WAH"},
     ],
 
     # ── CV results (5-fold, defaults, full 594k data) ─────────────────────────
@@ -245,7 +245,7 @@ def s1_title(prs):
 
     y = Inches(2.85)
     for m in DATA["members"]:
-        txbox(sl, f"  {m['name']}  —  {m['role']}",
+        txbox(sl, f"  {m['name']}",
               MARGIN, y, Inches(6), Inches(0.38), size=15, color=C_TEXT)
         y += Inches(0.4)
 
