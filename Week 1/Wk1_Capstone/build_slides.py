@@ -394,18 +394,21 @@ def s6_champion(prs):
         f"{d['champion_family']} family: sequentially corrects errors — strongest on tabular, imbalanced data.",
         "Provides strong baseline for GridSearchCV tuning in §3 (champion-only grid search).",
     ]
-    bullets(sl, pts, MARGIN, y_j + Inches(0.4), W - MARGIN*2, H - y_j - Inches(0.5), size=14)
+    bullets(sl, pts, MARGIN, y_j + Inches(0.4), W - MARGIN*2, Inches(2.1), size=14)
 
-    # 3-family comparison table
+    # 3-family comparison table (stacked below bullets, full width)
+    y_tbl = y_j + Inches(2.6)
+    txbox(sl, "Model families considered", MARGIN, y_tbl, W - MARGIN*2, Inches(0.35),
+          size=13, bold=True, color=C_ACCENT)
     headers = ["Family", "Model", "Rationale"]
     rows    = [
         ("Linear",  "Logistic Regression", "Interpretable baseline; linear decision boundary"),
         ("Bagging", "Random Forest",       "Variance reduction; built-in feature importance"),
         ("Boosting","XGBoost",             "Sequentially corrects errors; strong on tabular data"),
     ]
-    col_w = [Inches(1.5), Inches(2.5), Inches(5.5)]
+    col_w = [Inches(1.8), Inches(2.8), Inches(7.8)]
     tbl_w = sum(col_w)
-    table(sl, headers, rows, W - tbl_w - MARGIN, y_j, tbl_w, col_widths=col_w)
+    table(sl, headers, rows, MARGIN, y_tbl + Inches(0.4), tbl_w, col_widths=col_w)
 
 
 def s7_tuning(prs):
