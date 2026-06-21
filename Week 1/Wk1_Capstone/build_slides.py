@@ -29,6 +29,7 @@ DATA = {
     "group":        "Group 3",
     "course":       "ICT6001C — AI Programme | Week 1 Capstone",
     "repo_link":    "https://github.com/kinwahlai/ICT6001C",
+    "data_source":  "https://www.kaggle.com/competitions/playground-series-s6e3/data",
     "youtube_link": "<YouTube link>",
     "members": [
         {"name": "YEO XIU JUAN",   "id": "2570472"},
@@ -228,9 +229,11 @@ def s1_title(prs):
         y += Inches(0.4)
 
     txbox(sl, f"Repo :  {DATA['repo_link']}",
-          MARGIN, Inches(6.4), W - MARGIN*2, Inches(0.35), size=11, color=C_ACCENT)
+          MARGIN, Inches(6.2), W - MARGIN*2, Inches(0.35), size=11, color=C_ACCENT)
+    txbox(sl, f"Data :  {DATA['data_source']}",
+          MARGIN, Inches(6.55), W - MARGIN*2, Inches(0.35), size=11, color=C_ACCENT)
     txbox(sl, f"Video:  {DATA['youtube_link']}",
-          MARGIN, Inches(6.8), W - MARGIN*2, Inches(0.35), size=11, color=C_ACCENT)
+          MARGIN, Inches(6.9), W - MARGIN*2, Inches(0.35), size=11, color=C_ACCENT)
 
 
 def s2_exec_summary(prs):
