@@ -20,20 +20,20 @@ from pptx.enum.text import PP_ALIGN
 # ── Paths ─────────────────────────────────────────────────────────────────────
 HERE       = pathlib.Path(__file__).parent
 ASSETS_DIR = HERE / "slides_assets"
-NB_PATH    = HERE / "capstone_churn_executed.ipynb"
+NB_PATH    = HERE / "capstone_churn_executed-fullset.ipynb"
 OUT_PATH   = HERE / "group3.pptx"
 ASSETS_DIR.mkdir(exist_ok=True)
 
 # ── DATA — update values after full-data run ──────────────────────────────────
 DATA = {
     "group":        "Group 3",
-    "course":       "ICT6001 — AI Programme | Week 1 Capstone",
-    "repo_link":    "<repo link>",
+    "course":       "ICT6001C — AI Programme | Week 1 Capstone",
+    "repo_link":    "https://github.com/kinwahlai/ICT6001C",
     "youtube_link": "<YouTube link>",
     "members": [
-        {"name": "YEO XIU JUAN",   "id": "2570777"},
-        {"name": "LIM KHOON SENG", "id": "2570888"},
-        {"name": "LAI KIN WAH",    "id": "2570999"},
+        {"name": "YEO XIU JUAN",   "id": "2570472"},
+        {"name": "LIM KHOON SENG", "id": "2570459"},
+        {"name": "LAI KIN WAH",    "id": "2570461"},
     ],
 
     # ── CV results (5-fold, defaults, full 594k data) ─────────────────────────
