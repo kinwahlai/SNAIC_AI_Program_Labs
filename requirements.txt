@@ -10,3 +10,4 @@ nbconvert==7.16.4
 ipykernel==6.28.0
 papermill
 python-pptx
+geopandas
