@@ -9,3 +9,5 @@ Week 2/Day 1/data/processed/
 Week 2/Day 1/shared_data/day_1_weather_taxi_data.duckdb
 *.parquet
 *.zip
+Week 2/Day 1/04_serving_dashboard/dashboard_frontend.html
+*.pyc
