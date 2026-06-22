@@ -1,0 +1,1 @@
+https://huggingface.co/datasets/5CD-AI/Viet-Handwriting-OCR-v2
