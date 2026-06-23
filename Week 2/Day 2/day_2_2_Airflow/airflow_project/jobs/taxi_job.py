@@ -1,10 +1,6 @@
 import json
 from datetime import datetime, timezone
 
-import duckdb
-import pandas as pd
-import requests
-
 from jobs.config import (
     TAXI_API_URL,
     STAGING_DIR,
@@ -24,6 +20,8 @@ def fetch_taxi_data():
     Fetch raw taxi availability data from data.gov.sg.
     Save the raw JSON file.
     """
+    import requests  # lazy: keep DAG parse time fast
+
     ensure_dirs()
 
     collected_at = datetime.now(timezone.utc)
@@ -51,6 +49,8 @@ def clean_taxi_data(raw_path: str):
     - longitude
     - latitude
     """
+    import pandas as pd  # lazy: keep DAG parse time fast
+
     with open(raw_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -85,6 +85,8 @@ def join_taxi_to_planning_area(clean_path: str):
     This is the transformation step that used to be hidden inside the
     dashboard code. Keeping it as its own task makes orchestration visible.
     """
+    import pandas as pd  # lazy: keep DAG parse time fast
+
     ensure_dirs()
     df = pd.read_csv(clean_path)
     joined = attach_area_from_coordinates(df)
@@ -111,6 +113,9 @@ def load_taxi_to_duckdb(counts_path: str):
     """
     Load taxi planning-area counts into DuckDB.
     """
+    import duckdb  # lazy: keep DAG parse time fast
+    import pandas as pd  # lazy: keep DAG parse time fast
+
     df = pd.read_csv(counts_path)
     points_path = INTERMEDIATE_DIR / "int_taxi_points_with_area.csv"
     points_df = pd.read_csv(points_path)

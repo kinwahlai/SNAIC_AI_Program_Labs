@@ -1,10 +1,6 @@
 import json
 from datetime import datetime, timezone
 
-import duckdb
-import pandas as pd
-import requests
-
 from jobs.config import (
     RAINFALL_API_URL,
     STAGING_DIR,
@@ -21,6 +17,8 @@ def fetch_rainfall_data():
     Fetch raw rainfall data from data.gov.sg.
     Save the raw JSON file.
     """
+    import requests  # lazy: keep DAG parse time fast
+
     ensure_dirs()
 
     collected_at = datetime.now(timezone.utc)
@@ -52,6 +50,8 @@ def clean_rainfall_data(raw_path: str):
     - rainfall_mm
     - is_raining
     """
+    import pandas as pd  # lazy: keep DAG parse time fast
+
     with open(raw_path, "r", encoding="utf-8") as f:
         payload = json.load(f)
 
@@ -100,6 +100,8 @@ def join_rainfall_to_planning_area(clean_path: str):
     """
     Join rainfall stations to Singapore planning areas and aggregate by area.
     """
+    import pandas as pd  # lazy: keep DAG parse time fast
+
     ensure_dirs()
     df = pd.read_csv(clean_path)
     joined = attach_area_from_coordinates(df)
@@ -134,6 +136,9 @@ def load_rainfall_to_duckdb(counts_path: str):
     """
     Load rainfall planning-area facts into DuckDB.
     """
+    import duckdb  # lazy: keep DAG parse time fast
+    import pandas as pd  # lazy: keep DAG parse time fast
+
     df = pd.read_csv(counts_path)
 
     conn = duckdb.connect(str(DB_PATH))
