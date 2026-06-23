@@ -543,6 +543,29 @@ def day_1_style_taxi_availability(
     return fetch_upstream_payload("taxi")
 
 
+@app.get(
+    "/debug-lab/04-flaky/transport/taxi-availability",
+    response_model=None,
+    include_in_schema=False,
+)
+def hidden_flaky_taxi_availability(
+    request: Request,
+    client_id: str | None = Query(default=None),
+):
+    """
+    Hidden Airflow demo endpoint.
+
+    It keeps the original Day 1 taxi GeoJSON-like response shape, but applies
+    the fixed flaky behavior: the same client_id fails twice, then succeeds.
+    """
+    record_request()
+    resolved_client_id = client_id_from_request(request, client_id)
+    scenario_response = maybe_apply_failure_scenario("flaky", resolved_client_id)
+    if scenario_response is not None:
+        return scenario_response
+    return fetch_upstream_payload("taxi")
+
+
 @app.get("/api/v1/environment/2-hour-weather-forecast", response_model=None)
 def day_1_style_weather_forecast(
     request: Request,

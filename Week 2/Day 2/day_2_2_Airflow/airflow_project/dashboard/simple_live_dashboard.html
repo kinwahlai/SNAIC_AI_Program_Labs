@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Singapore Live Taxi and Rainfall</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+      --line: #d7dce2;
+      --text: #1d2733;
+      --muted: #647184;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #98a2b3;
+    }
+
+    .dot.loading { background: #f59e0b; }
+    .dot.ok { background: #16a34a; }
+    .dot.error { background: #dc2626; }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      min-height: calc(100vh - 64px);
+    }
+
+    .image-wrap {
+      padding: 18px;
+      min-height: calc(100vh - 64px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #map-image {
+      width: 100%;
+      max-height: calc(100vh - 100px);
+      object-fit: contain;
+      border: 1px solid var(--line);
+      background: white;
+    }
+
+    aside {
+      border-left: 1px solid var(--line);
+      background: var(--panel);
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .metric {
+      border-bottom: 1px solid var(--line);
+      padding: 14px 0;
+    }
+
+    .metric:first-child {
+      padding-top: 0;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .value {
+      margin-top: 6px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .small {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .swatch {
+      width: 22px;
+      height: 14px;
+      border: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+
+    button {
+      width: 100%;
+      height: 40px;
+      margin-top: 18px;
+      border: 1px solid #1f2937;
+      background: #1f2937;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    @media (max-width: 900px) {
+      header {
+        height: auto;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 16px;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .image-wrap {
+        min-height: 55vh;
+      }
+
+      aside {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Singapore Live Taxi and Rainfall</h1>
+    <div class="status">
+      <span id="status-dot" class="dot"></span>
+      <span id="status-text">Waiting for first refresh</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="image-wrap">
+      <img id="map-image" alt="Singapore map with available taxi points">
+    </section>
+
+    <aside>
+      <div class="metric">
+        <div class="label">Available Taxis</div>
+        <div id="total-taxis" class="value">-</div>
+        <div id="taxi-time" class="small">Taxi API timestamp: -</div>
+      </div>
+
+      <div class="metric">
+        <div class="label">Areas With Rain</div>
+        <div id="raining-areas" class="value">-</div>
+        <div id="rainfall-time" class="small">Rainfall API timestamp: -</div>
+      </div>
+
+      <div class="metric">
+        <div class="label">Rainfall Intensity Color</div>
+        <div class="legend">
+          <div class="legend-row"><span class="swatch" style="background:#9db7d3"></span>No rain / trace: &lt; 0.5 mm/hr</div>
+          <div class="legend-row"><span class="swatch" style="background:#86efac"></span>Light: 0.5 to &lt; 2 mm/hr</div>
+          <div class="legend-row"><span class="swatch" style="background:#facc15"></span>Moderate: 2 to &lt; 10 mm/hr</div>
+          <div class="legend-row"><span class="swatch" style="background:#f97316"></span>Heavy: 10 to &lt; 30 mm/hr</div>
+          <div class="legend-row"><span class="swatch" style="background:#7e22ce"></span>Very heavy: 30+ mm/hr</div>
+        </div>
+        <div class="small">The rainfall API gives 5-minute totals, so the app approximates intensity as mm/hr. Red points are available taxi locations.</div>
+      </div>
+
+      <div class="metric">
+        <div class="label">Pipeline</div>
+        <div id="pipeline-status" class="small">
+          Web page -> API call -> download APIs -> clean data -> insert DuckDB -> draw PNG -> update page
+        </div>
+      </div>
+
+      <button id="refresh-button" type="button">Refresh now</button>
+      <div class="small">The browser refreshes this dashboard every 2 minutes. Each refresh redraws the image.</div>
+    </aside>
+  </main>
+
+  <script>
+    const REFRESH_MS = 120000;
+
+    function setStatus(kind, text) {
+      const dot = document.getElementById('status-dot');
+      dot.className = `dot ${kind}`;
+      document.getElementById('status-text').textContent = text;
+    }
+
+    function renderSummary(summary) {
+      document.getElementById('total-taxis').textContent = summary.total_taxis ?? '-';
+      document.getElementById('raining-areas').textContent =
+        `${summary.raining_area_count ?? '-'} / ${summary.area_count ?? '-'}`;
+      document.getElementById('taxi-time').textContent =
+        `Taxi API timestamp: ${summary.taxi_timestamp ?? '-'}`;
+      document.getElementById('rainfall-time').textContent =
+        `Rainfall API timestamp: ${summary.rainfall_timestamp ?? '-'}`;
+
+      const run = summary.last_run || {};
+      document.getElementById('pipeline-status').textContent =
+        `${run.status ?? 'unknown'} | ${run.refresh_ended_at ?? '-'} | ${run.message ?? ''}`;
+
+      document.getElementById('map-image').src = summary.map_image_url || `/map.png?ts=${Date.now()}`;
+    }
+
+    async function refreshData() {
+      const button = document.getElementById('refresh-button');
+      button.disabled = true;
+      setStatus('loading', 'Refreshing: API call, DuckDB insert, redraw PNG');
+
+      try {
+        const response = await fetch('/api/refresh');
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text);
+        }
+
+        const payload = await response.json();
+        renderSummary(payload.summary);
+        setStatus('ok', `Updated ${new Date().toLocaleTimeString()}`);
+      } catch (error) {
+        setStatus('error', `Refresh failed: ${error.message}`);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    document.getElementById('refresh-button').addEventListener('click', refreshData);
+    refreshData();
+    setInterval(refreshData, REFRESH_MS);
+  </script>
+</body>
+</html>

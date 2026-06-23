@@ -11,3 +11,7 @@ ipykernel==6.28.0
 papermill
 python-pptx
 geopandas
+# required for week 2 notebooks
+fastapi>=0.110
+uvicorn[standard]>=0.29
+requests>=2.31
